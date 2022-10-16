@@ -34,6 +34,10 @@ void proc_init(void)
 		/*
 		* LAB1: you may need to initialize your new fields of proc here
 		*/
+		p->taskinfo.status = UnInit;
+		memset(p->taskinfo.syscall_times, 0, sizeof(p->taskinfo.syscall_times));
+		p->taskinfo.time = 0;
+		p->start_time = 0;
 	}
 	idle.kstack = (uint64)boot_stack_top;
 	idle.pid = 0;
@@ -84,6 +88,10 @@ void scheduler(void)
 				/*
 				* LAB1: you may need to init proc start time here
 				*/
+				p->taskinfo.status = Running;
+				if(!p->start_time){
+					p->start_time = r_time();
+				}
 				p->state = RUNNING;
 				current_proc = p;
 				swtch(&idle.context, &p->context);
@@ -111,6 +119,7 @@ void sched(void)
 void yield(void)
 {
 	current_proc->state = RUNNABLE;
+	current_proc->taskinfo.status = Ready;
 	sched();
 }
 
@@ -120,6 +129,7 @@ void exit(int code)
 	struct proc *p = curr_proc();
 	infof("proc %d exit with %d", p->pid, code);
 	p->state = UNUSED;
+	p->taskinfo.status = Exited;
 	finished();
 	sched();
 }
